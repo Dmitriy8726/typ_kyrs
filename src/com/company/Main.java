@@ -1,6 +1,10 @@
 package com.company;
 
 import javax.swing.*;
+import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreeModel;
+import javax.swing.tree.TreeNode;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -9,6 +13,7 @@ import java.awt.event.WindowEvent;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.HashMap;
 
 class VerticalLayout implements LayoutManager
@@ -86,6 +91,8 @@ public class Main {
     private static HashMap <String, ArrayList<String>> answer_Hom = new HashMap<>(); //Содержит перечень ответов вида Хомского
     private static HashMap <String, ArrayList<String>> rule_Hom = new HashMap<>(); //Содержит перечень правил вида Хомского
     private static ArrayList <String> str_temp_noter_Hom = new ArrayList<>(); // нетерминальные символы вида Хомского
+    private static HashMap<Integer, HashMap<String, String>> tree_number = new HashMap<>(); // Содержит номера правил для Хомского
+    private static HashMap<Integer, HashMap<String, String>> tree_number_Hom = new HashMap<>(); // Содержит номера правил для Хомского
     private static JMenuItem avtor;
 
     public static void main(String[] args) {
@@ -514,7 +521,7 @@ public class Main {
         }
         String s = new String();
         JTextArea textArea2 = new JTextArea(5, 30);
-        s += "Правила вида нормальной форме Хомского \n";
+        s += "Правила канонического вида \n";
         for (int i = 0; i < rule.size(); i++) {
             s += str_temp_noterm.get(i) + " = ";
             for (String std: rule.get(str_temp_noterm.get(i))) {
@@ -550,8 +557,8 @@ public class Main {
             @Override
             public void actionPerformed(ActionEvent e) {
                 jp_gramm.setVisible(false);
-                generation(rule, str_temp_noterm, answer_bas);
-                generation(rule_Hom, str_temp_noter_Hom, answer_Hom);
+                generation(rule, str_temp_noterm, answer_bas, tree_number);
+                generation(rule_Hom, str_temp_noter_Hom, answer_Hom, tree_number_Hom);
                 JTextArea textArea = new JTextArea(5, 30);
                 int ind = 0;
                 for (int i = num_begin; i <= num_end; i++) {
@@ -578,10 +585,357 @@ public class Main {
                     ind = 0;
                     textArea.append(" \n");
                 }
+                JButton batton = new JButton("Tree");
+                JPanel panel1 = new JPanel();
+                JTextField text_tree = new JTextField(2);
+                batton.addActionListener(new ActionListener() {
+
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+
+                        jp_chain.setEnabled(false);
+                        JFrame myWindow = new JFrame("Tree");
+                        myWindow.addWindowListener(new WindowAdapter() {
+                            public void windowClosing(WindowEvent e) {
+                                jp_chain.setEnabled(true);
+                            }
+                        });
+                        myWindow.setVisible(true);
+                        myWindow.setSize(500, 500);
+                        myWindow.setResizable(false);
+                        String s = text_tree.getText();
+                        int lenght = s.length();
+                        int counter = 2;
+                        String str = null;
+                        try {
+                            str = tree_number.get(lenght).get(s);
+                        } catch (Exception ef) {
+                            JOptionPane.showMessageDialog(myWindow, "ЭТО МНОЖЕСТВО НЕ ПРЕНАДЛЕЖИТ К КОНЕЧНЫМ ЦЕПОЧКАМ");
+                            return;
+                        }
+                        String ROOT = null;
+                        for ( String key : tree_number.get(lenght).keySet() ) {
+                            if (tree_number.get(lenght).get(key).equals(str.substring(0, 1))) {
+                                ROOT = key;
+                            }
+                        }
+                        String num_rul = str.substring(0, 1);
+                        String time_root = null;
+                        boolean flag = false;
+                        boolean flag_term = true;
+                        DefaultMutableTreeNode root = new DefaultMutableTreeNode(ROOT);
+                        while(counter <= str.length()) {
+                            Enumeration en = root.depthFirstEnumeration();
+                            while (en.hasMoreElements()) {
+                                DefaultMutableTreeNode node = (DefaultMutableTreeNode) en.nextElement();
+                                if (node.isLeaf()) {
+                                    flag = false;
+                                    String s_non_term = null;
+                                    for (String str_1: str_temp_noterm) {
+                                        if (str_1.equals(node.toString())) {
+                                            flag = true;
+                                            s_non_term = str_1;
+                                        }
+                                    }
+                                    if (flag) {
+                                        String temp_one = null;
+                                        String temo_two = null;
+                                        for ( String key : tree_number.get(lenght).keySet() ) {
+                                            if (tree_number.get(lenght).get(key).equals(num_rul)) {
+                                                temp_one = key;
+                                            }
+                                        }
+                                        for ( String key : tree_number.get(lenght).keySet() ) {
+                                            if (tree_number.get(lenght).get(key).equals(str.substring(0, counter))) {
+                                                temo_two = key;
+                                            }
+                                        }
+                                        flag_term = true;
+                                        if (temp_one.length() == temo_two.length()) {
+                                            for (String sss: str_temp_term) {
+                                                if (temo_two.substring(temp_one.indexOf(s_non_term) , temp_one.indexOf(s_non_term) + 1).equals(sss)) {
+                                                    node.add(new DefaultMutableTreeNode(temo_two.substring(temp_one.indexOf(s_non_term) , temp_one.indexOf(s_non_term) + 1), false));
+                                                    flag_term = false;
+                                                }
+                                            }
+                                            if (flag_term) {
+                                                node.add(new DefaultMutableTreeNode(temo_two.substring(temp_one.indexOf(s_non_term), temp_one.indexOf(s_non_term) + 1)));
+                                            }
+                                        } else if (temp_one.indexOf(s_non_term) == 0){
+                                            for(int i = 0;i < temo_two.length() - temp_one.length() + 1; i++) {
+                                                flag_term = true;
+                                                for (String sss: str_temp_term) {
+                                                    if (temo_two.substring(i , i + 1).equals(sss)) {
+                                                        node.add(new DefaultMutableTreeNode(temo_two.substring(i, i + 1), false));
+                                                        flag_term = false;
+                                                    }
+                                                }
+                                                if (flag_term) {
+                                                    node.add(new DefaultMutableTreeNode(temo_two.substring(i, i + 1), true));
+                                                }
+                                            }
+                                        } else if (temp_one.indexOf(s_non_term) == temp_one.length() - 1) {
+                                            flag_term = true;
+                                            for(int i = temp_one.length() - 1;i < temo_two.length() ; i++) {
+                                                for (String sss: str_temp_term) {
+                                                    if (temo_two.substring(i , i + 1).equals(sss)) {
+                                                        node.add(new DefaultMutableTreeNode(temo_two.substring(i, i + 1), false));
+                                                        flag_term = false;
+                                                    }
+                                                }
+                                                if (flag_term) {
+                                                    node.add(new DefaultMutableTreeNode(temo_two.substring(i, i + 1), true));
+                                                }
+                                            }
+                                        } else {
+                                            for(int i = temp_one.indexOf(s_non_term); i < temo_two.length() - temp_one.length() + 2 ; i++) {
+                                                flag_term = true;
+                                                for (String sss: str_temp_term) {
+                                                    if (temo_two.substring(i , i + 1).equals(sss)) {
+                                                        node.add(new DefaultMutableTreeNode(temo_two.substring(i , i + 1), false));
+                                                        flag_term = false;
+                                                    }
+                                                }
+                                                if (flag_term) {
+                                                    node.add(new DefaultMutableTreeNode(temo_two.substring(i, i + 1), true));
+                                                }
+                                            }
+                                        }
+                                        break;
+                                    }
+                                }
+                            }
+                            num_rul = str.substring(0, counter);
+                            counter++;
+                        }
+
+
+                        DefaultTreeModel treeModel1 = new DefaultTreeModel(root, true);
+                        JTree tree1 = new JTree(treeModel1);
+                        JPanel contents = new JPanel(new GridLayout(1, 2));
+
+
+                        try {
+                            str = tree_number_Hom.get(lenght).get(s);
+                        } catch (Exception ef) {
+                            JOptionPane.showMessageDialog(myWindow, "ЭТО МНОЖЕСТВО НЕ ПРЕНАДЛЕЖИТ К КОНЕЧНЫМ ЦЕПОЧКАМ");
+                            return;
+                        }
+                        String ROOT1 = null;
+                        for ( String key : tree_number_Hom.get(lenght).keySet() ) {
+                            if (tree_number_Hom.get(lenght).get(key).equals(str.substring(0, 1))) {
+                                ROOT1 = key;
+                            }
+                        }
+                        num_rul = str.substring(0, 1);
+                        counter = 2;
+                        DefaultMutableTreeNode root1 = new DefaultMutableTreeNode(ROOT1);
+                        boolean flag_end = false;
+                        boolean flag_meddle = false;
+                        while(counter <= str.length()) {
+                            Enumeration en = root1.depthFirstEnumeration();
+                            while (en.hasMoreElements()) {
+                                DefaultMutableTreeNode node = (DefaultMutableTreeNode) en.nextElement();
+                                if (node.isLeaf()) {
+                                    flag = false;
+                                    String s_non_term = null;
+                                    for (String str_1: str_temp_noter_Hom) {
+                                        if (str_1.equals(node.toString())) {
+                                            flag = true;
+                                            s_non_term = str_1;
+                                        }
+                                    }
+                                    if (flag) {
+                                        String temp_one = null;
+                                        String temo_two = null;
+                                        for ( String key : tree_number_Hom.get(lenght).keySet() ) {
+                                            if (tree_number_Hom.get(lenght).get(key).equals(num_rul)) {
+                                                temp_one = key;
+                                            }
+                                        }
+                                        for ( String key : tree_number_Hom.get(lenght).keySet() ) {
+                                            if (tree_number_Hom.get(lenght).get(key).equals(str.substring(0, counter))) {
+                                                temo_two = key;
+                                            }
+                                        }
+                                        flag_term = true;
+                                        if (temp_one.substring(temp_one.length() - 1).equals(">")) {
+                                            System.out.println(temp_one);
+                                            for(int i = temp_one.length() - 1; i > 0; i-- ) {
+                                                if (temp_one.substring(i, i + 1).equals("<")) {
+                                                    if (temp_one.indexOf(s_non_term) == i) {
+                                                        flag_end = true;
+                                                        break;
+                                                    }
+                                                }
+                                            }
+                                        }
+
+                                        if (countCharall(temp_one, str_temp_noter_Hom) == countCharall(temo_two, str_temp_noter_Hom)) {
+                                            System.out.println(temp_one.indexOf(s_non_term) + " " + temp_one + " " + s_non_term);
+                                                for (String sss : str_temp_term) {
+                                                    if (temo_two.substring(temp_one.indexOf(s_non_term), temp_one.indexOf(s_non_term) + 1).equals(sss)) {
+                                                        node.add(new DefaultMutableTreeNode(temo_two.substring(temp_one.indexOf(s_non_term), temp_one.indexOf(s_non_term) + 1), false));
+                                                        flag_term = false;
+                                                    }
+                                                }
+                                                if (flag_term) {
+                                                    if (temo_two.substring(temp_one.indexOf(s_non_term), temp_one.indexOf(s_non_term) + 1).equals("<")) {
+                                                        String p = "";
+                                                        int i = temp_one.indexOf(s_non_term);
+                                                        int j = temp_one.indexOf(s_non_term) + 1;
+                                                        while (!temo_two.substring(i , j).equals(">")) {
+                                                            i++;
+                                                            j++;
+                                                        }
+                                                        p += temo_two.substring(temp_one.indexOf(s_non_term) , j);
+                                                        node.add(new DefaultMutableTreeNode(p, true));
+                                                    } else {
+                                                        node.add(new DefaultMutableTreeNode(temo_two.substring(temp_one.indexOf(s_non_term), temp_one.indexOf(s_non_term) + 1)));
+                                                    }
+                                                }
+
+                                        } else if (temp_one.indexOf(s_non_term) == 0 || temp_one.indexOf("<") == 0){
+                                            for(int i = 0;i < temo_two.length() - temp_one.length() + 1; i++) {
+                                                if (temo_two.substring(i, i + 1).equals("<")) {
+                                                    String p = "";
+                                                    while (!temo_two.substring(i, i + 1).equals(">")) {
+                                                        p += temo_two.substring(i, i + 1);
+                                                        i++;
+                                                    }
+                                                    p += temo_two.substring(i, i + 1);
+                                                    node.add(new DefaultMutableTreeNode(p, true));
+                                                } else {
+                                                    flag_term = true;
+                                                    for (String sss : str_temp_term) {
+                                                        if (temo_two.substring(i, i + 1).equals(sss)) {
+                                                            node.add(new DefaultMutableTreeNode(temo_two.substring(i, i + 1), false));
+                                                            flag_term = false;
+                                                        }
+                                                    }
+                                                    if (flag_term) {
+                                                        if (temo_two.substring(i, i + 1) == "<") {
+                                                            String p = null;
+                                                            while (temo_two.substring(i, i + 1) != ">") {
+                                                                p += temo_two.substring(i, i + 1);
+                                                                i++;
+                                                            }
+                                                            node.add(new DefaultMutableTreeNode(p, true));
+                                                        } else {
+                                                            node.add(new DefaultMutableTreeNode(temo_two.substring(i, i + 1), true));
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        } else
+                                            if (temp_one.indexOf(s_non_term) == temp_one.length() - 1 || flag_end) {
+                                                if (flag_end) {
+                                                    for (int i = temp_one.indexOf(s_non_term);i < temo_two.length();i++) {
+                                                        if (temo_two.substring(i, i + 1).equals("<")) {
+                                                            String p = "";
+                                                            while (!temo_two.substring(i, i + 1).equals(">")) {
+                                                                p += temo_two.substring(i, i + 1);
+                                                                i++;
+                                                            }
+                                                            p += temo_two.substring(i, i + 1);
+                                                            node.add(new DefaultMutableTreeNode(p, true));
+                                                        } else {
+                                                            flag_term = true;
+                                                            for (String sss : str_temp_term) {
+                                                                if (temo_two.substring(i, i + 1).equals(sss)) {
+                                                                    node.add(new DefaultMutableTreeNode(temo_two.substring(i, i + 1), false));
+                                                                    flag_term = false;
+                                                                }
+                                                            }
+                                                            if (flag_term) {
+                                                                if (temo_two.substring(i, i + 1) == "<") {
+                                                                    String p = null;
+                                                                    while (temo_two.substring(i, i + 1) != ">") {
+                                                                        p += temo_two.substring(i, i + 1);
+                                                                        i++;
+                                                                    }
+                                                                    node.add(new DefaultMutableTreeNode(p, true));
+                                                                } else {
+                                                                    node.add(new DefaultMutableTreeNode(temo_two.substring(i, i + 1), true));
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                } else {
+                                                    flag_term = true;
+                                                    for (int i = temp_one.length() - 1; i < temo_two.length(); i++) {
+                                                        if (temo_two.substring(i, i + 1).equals("<")) {
+                                                            String p = "";
+                                                            while (!temo_two.substring(i, i + 1).equals(">")) {
+                                                                p += temo_two.substring(i, i + 1);
+                                                                i++;
+                                                            }
+                                                            p += temo_two.substring(i, i + 1);
+                                                            node.add(new DefaultMutableTreeNode(p, true));
+                                                        } else {
+                                                            flag_term = true;
+                                                            for (String sss : str_temp_term) {
+                                                                if (temo_two.substring(i, i + 1).equals(sss)) {
+                                                                    node.add(new DefaultMutableTreeNode(temo_two.substring(i, i + 1), false));
+                                                                    flag_term = false;
+                                                                }
+                                                            }
+                                                            if (flag_term) {
+                                                                if (temo_two.substring(i, i + 1) == "<") {
+                                                                    String p = null;
+                                                                    while (temo_two.substring(i, i + 1) != ">") {
+                                                                        p += temo_two.substring(i, i + 1);
+                                                                        i++;
+                                                                    }
+                                                                    node.add(new DefaultMutableTreeNode(p, true));
+                                                                } else {
+                                                                    node.add(new DefaultMutableTreeNode(temo_two.substring(i, i + 1), true));
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                            else {
+                                            for(int i = temp_one.indexOf(s_non_term); i < temo_two.length() - temp_one.length() + 2 ; i++) {
+
+                                                flag_term = true;
+                                                for (String sss: str_temp_term) {
+                                                    if (temo_two.substring(i , i + 1).equals(sss)) {
+                                                        node.add(new DefaultMutableTreeNode(temo_two.substring(i , i + 1), false));
+                                                        flag_term = false;
+                                                    }
+                                                }
+                                                if (flag_term) {
+                                                    node.add(new DefaultMutableTreeNode(temo_two.substring(i, i + 1), true));
+                                                }
+                                            }
+                                        }
+                                        break;
+                                    }
+                                }
+                            }
+                            num_rul = str.substring(0, counter);
+                            counter++;
+                        }
+
+
+                        DefaultTreeModel treeModel2 = new DefaultTreeModel(root1, true);
+                        JTree tree2 = new JTree(treeModel2);
+                        contents.add(new JScrollPane(tree1));
+                        contents.add(new JScrollPane(tree2));
+                        myWindow.setContentPane(contents);
+
+
+                    }
+                });
+                panel1.add(text_tree);
+                panel1.add(batton);
                 JScrollPane scroll1 = new JScrollPane(textArea,
                         JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
                         JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
                 jp_chain.add(scroll1);
+                jp_chain.add(panel1);
                 avtor.setEnabled(true);
                 myWindow.add(jp_chain);
             }
@@ -590,17 +944,20 @@ public class Main {
         myWindow.add(jp_gramm);
     }
 
-    public static void generation(HashMap <String, ArrayList<String>> map,  ArrayList <String> list, HashMap <String, ArrayList<String>> ans) {
+    public static void generation(HashMap <String, ArrayList<String>> map,  ArrayList <String> list,
+                                  HashMap <String, ArrayList<String>> ans, HashMap<Integer, HashMap<String, String>> tree) {
         boolean flag_all = true;
         boolean flag_term = true;
         boolean flag_add = true;
         int counter = 0;
+        int add_tree = 1;
         ArrayList<String> m1 = new ArrayList<>();
         ArrayList<String> m2 = new ArrayList<>();
         ArrayList<String> answer = new ArrayList<>();
         String split1 = "", split2 = "";
         String s = null;
         String ss = null;
+        HashMap <String, String> tree_tamp = new HashMap<>();
         m1.add(jt_str_begin);
         for (int f = num_begin; f <= num_end; f++) {
             answer = new ArrayList<>();
@@ -615,12 +972,15 @@ public class Main {
             ss = null;
             m1.add(jt_str_begin);
             counter = 0;
+            tree_tamp = new HashMap<>();
+            tree_tamp.put("S", "1");
             while (flag_all) {
                 for (String str1 : m1) {
                     split1 = "";
                     split2 = "";
                     counter = 0;
                     flag_term = true;
+                    add_tree = 1;
                     while (flag_term) {
                         s = str1.substring(counter, counter + 1);
                         if (s.equals("<")) {
@@ -667,17 +1027,20 @@ public class Main {
                             continue;
                         }
 
-
                         for (String str3 : list) {
                             if (ss.contains(str3)) {
                                 flag_add = false;
                                 m2.add(ss);
+                                tree_tamp.put(ss, tree_tamp.get(str1) + add_tree);
+                                add_tree++;
                                 break;
                             }
                         }
 
                         boolean flag = true;
                         if (flag_add && ss.length() == f) {
+                            tree_tamp.put(ss, tree_tamp.get(str1) + add_tree);
+                            add_tree++;
                             for (String sss : answer) {
                                 if (sss.equals(ss)) {
                                     flag = false;
@@ -700,6 +1063,7 @@ public class Main {
                 }
             }
             ans.put(Integer.toString(f), answer);
+            tree.put(f, tree_tamp);
         }
     }
 
@@ -872,7 +1236,7 @@ public class Main {
                     } else if (str.charAt(i) == '<') {
                         for (int j = i; j < str.length(); j++) {
                             if (str.charAt(j) == '>') {
-                                i = j + 1;
+                                i = j;
                                 break;
                             }
                         }
@@ -883,5 +1247,6 @@ public class Main {
 
         return count;
     }
+
 
 }
