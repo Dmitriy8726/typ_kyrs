@@ -91,7 +91,7 @@ public class Main {
     private static HashMap <String, ArrayList<String>> answer_Hom = new HashMap<>(); //Содержит перечень ответов вида Хомского
     private static HashMap <String, ArrayList<String>> rule_Hom = new HashMap<>(); //Содержит перечень правил вида Хомского
     private static ArrayList <String> str_temp_noter_Hom = new ArrayList<>(); // нетерминальные символы вида Хомского
-    private static HashMap<Integer, HashMap<String, String>> tree_number = new HashMap<>(); // Содержит номера правил для Хомского
+    private static HashMap<Integer, HashMap<String, String>> tree_number = new HashMap<>(); // Содержит номера правил
     private static HashMap<Integer, HashMap<String, String>> tree_number_Hom = new HashMap<>(); // Содержит номера правил для Хомского
     private static JMenuItem avtor;
 
@@ -1090,6 +1090,28 @@ public class Main {
                 myWindow.setResizable(false);
             }
         });
+
+        JMenuItem notet = new JMenuItem(new AbstractAction("Правила") {
+            public void actionPerformed(ActionEvent e) {
+                glav.setEnabled(false);
+                JFrame myWindow = new JFrame("Правила");
+                myWindow.addWindowListener(new WindowAdapter() {
+                    public void windowClosing(WindowEvent e) {
+                        glav.setEnabled(true);
+                    }
+                });
+                JPanel panel = new JPanel();
+                JLabel lab = new JLabel("<html><p>Ввод производить через пробел, запрещенные символы:скобки, символы не принадлежащие латинице, не больше 1 символа<br /></p></html>");
+                panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
+                panel.add(Box.createHorizontalGlue());
+                panel.add(lab);
+                panel.add(Box.createHorizontalGlue());
+                myWindow.setContentPane(panel);
+                myWindow.setVisible(true);
+                myWindow.setSize(220, 100);
+                myWindow.setResizable(false);
+            }
+        });
         JMenuItem tema = new JMenuItem(new AbstractAction("Тема") {
             public void actionPerformed(ActionEvent e) {
                 glav.setEnabled(false);
@@ -1127,6 +1149,7 @@ public class Main {
         });
         file.add(avtor);
         file.add(tema);
+        file.add(notet);
         return file;
     }
 
